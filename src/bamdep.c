@@ -534,7 +534,7 @@ void usage()
 	putchar('\n');
 	puts(BUL " \e[1mOptions\e[0m:");
 	puts("  -i, --in  \e[3mFILE\e[0m   Input BAM file with bai index");
-	puts("  -o, --out \e[3mSTR\e[0m    Output depth plot png file \e[90m[${prefix}.png]\e[0m");
+	puts("  -o, --out \e[3mSTR\e[0m    Output depth plot png \e[90m[${prefix}.png]\e[0m");
 	puts("  -s, --sub \e[3mFILE\e[0m   Sub-title of depth plot \e[90m[none]\e[0m");
 	puts("  -c, --ctg \e[3mSTR\e[0m    Restrict analysis to this contig \e[90m[none]\e[0m");
 	putchar('\n');
