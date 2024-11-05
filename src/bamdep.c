@@ -9,7 +9,6 @@ int main(int argc, char *argv[])
 	arg->mpq = MINMQ;
 	arg->len = MINQL;
 	prs_arg(argc, argv, arg);
-	cgranges_t *gr = cr_init();
 	samFile *fp = sam_open(arg->in, "r");
 	if (!fp)
 		error("Error: failed to read input bam [%s]\n", arg->in);
@@ -78,7 +77,6 @@ int main(int argc, char *argv[])
 	draw_axis(cr, md, gl);
 	free(dp);
 	free(tt);
-	cr_destroy(gr);
 	bam_hdr_destroy(hdr);
 	hts_close(fp);
 	if (ends_with(arg->out, ".png"))
@@ -108,24 +106,6 @@ void ld_os(bam_hdr_t *hdr, int ci, kh_t *os, uint64_t *gl)
 		}
 		*gl = shift;
 	}
-}
-
-void ld_gr(samFile *fp, bam_hdr_t *hdr, int ci, int mis, cgranges_t *cr)
-{
-	bam1_t *b = bam_init1();
-	while (sam_read1(fp, hdr, b) >= 0)
-	{
-		bam1_core_t *c = &b->core;
-		if (c->flag & (BAM_FQCFAIL | BAM_FUNMAP | BAM_FREVERSE | BAM_FSECONDARY | BAM_FSUPPLEMENTARY))
-			continue;
-		if (ci != -1 && c->tid != ci)
-			continue;
-		if ((c->flag & BAM_FPAIRED) && (c->tid == c->mtid) && c->isize <= mis)
-			cr_add(cr, hdr->target_name[c->tid], c->pos, c->pos + c->isize, 0);
-	}
-	bam_destroy1(b);
-	cr_sort(cr);
-	cr_index(cr);
 }
 
 void prep_an(const dp_t *dp, uint64_t nd, uint64_t gl, char *an)

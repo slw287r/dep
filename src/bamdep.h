@@ -17,7 +17,6 @@
 #include <htslib/kstring.h>
 
 #include "ketopt.h"
-#include "cgranges.h"
 #include "dplot.h"
 #include "version.h"
 
@@ -71,11 +70,8 @@ typedef struct // auxiliary data structure
 
 void prs_arg(int argc, char **argv, arg_t *arg);
 void ld_os(bam_hdr_t *hdr, int ci, kh_t *os, uint64_t *gl);
-void ld_gr(samFile *fp, bam_hdr_t *h, int ci, int mis, cgranges_t *gr);
 int read_bam(void *data, bam1_t *b);
 void ld_dp(const char *fn, const char *ctg, dp_t **dp, uint32_t *md, uint64_t *nd);
-void out_bed(const cgranges_t *gr, bam_hdr_t *h, int ci, const char *out);
-void out_bgzf(const cgranges_t *gr, bam_hdr_t *h, int ci, const char *out);
 void dump_dp(bam_hdr_t *hdr, dp_t *dp, uint64_t nd, const char *out);
 void prep_an(const dp_t *dp, uint64_t nd, uint64_t gl, char *an);
 void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
