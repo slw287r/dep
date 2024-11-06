@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
 		draw_ped1(cr, os, md, gl, false, dp_wo_dup + i);
 	cairo_restore(cr);
 	draw_axis(cr, md, gl);
+	draw_legend(cr);
 	free(dp);
 	free(dp_wo_dup);
 	free(tt);

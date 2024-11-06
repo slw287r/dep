@@ -158,3 +158,26 @@ void draw_yticks(cairo_t *cr, const int ymax)
 	}
 	cairo_stroke(cr);
 }
+
+void draw_legend(cairo_t *cr)
+{
+	double yshift = -7.5;
+	cairo_set_font_size(cr, 17.5);
+	cairo_set_line_width(cr, 0.5);
+	cairo_set_source_rgb(cr, 36 / 255.0, 123 / 255.0, 160 / 255.0);
+	cairo_rectangle(cr, 12.5, -12.5 + yshift, 12.5, 12.5);
+	cairo_stroke_preserve(cr);
+	cairo_set_source_rgba(cr, 36 / 255.0, 123 / 255.0, 160 / 255.0, 0.9);
+	cairo_fill(cr);
+	cairo_move_to(cr, 27.5, yshift);
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_show_text(cr, "w/o dup");
+	cairo_set_source_rgb(cr, 112 / 255.0, 193 / 255.0, 179 / 255.0);
+	cairo_rectangle(cr, 207.5, -12.5 + yshift, 12.5, 12.5);
+	cairo_stroke_preserve(cr);
+	cairo_set_source_rgba(cr, 112 / 255.0, 193 / 255.0, 179 / 255.0, 0.9);
+	cairo_fill(cr);
+	cairo_move_to(cr, 222.5, yshift);
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_show_text(cr, "w/ dup");
+}
