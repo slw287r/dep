@@ -206,7 +206,7 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 	char dpw[NAME_MAX];
 	snprintf(dpw, NAME_MAX, "%d", md);
 	cairo_text_extents(cr, dpw, &ext);
-	cairo_move_to(cr, MARGIN / 2.5, fmax(-MARGIN * 1.45, -MARGIN - ext.width));
+	cairo_move_to(cr, MARGIN / 2.5, fmax(-MARGIN * 1.45, -MARGIN - ext.width / 2));
 	cairo_show_text(cr, ylab);
 	cairo_restore(cr);
 	// contig shades
