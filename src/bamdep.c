@@ -157,7 +157,7 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 	cairo_text_extents_t ext;
 	if (tt && strlen(tt)) // title
 	{
-		cairo_set_font_size(cr, 24.0);
+		cairo_set_font_size(cr, 22.0);
 		cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
 		cairo_text_extents(cr, tt, &ext);
 		x = DIM_X / 2.0 - (ext.width / 2.0 + ext.x_bearing);
@@ -260,9 +260,9 @@ void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, dp_t *
 	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
 	double ymx = ceil(log10(md)) + 1;
 	if (dup)
-		cairo_set_source_rgb(cr, 87 / 255.0, 22 / 255.0, 66 / 255.0);
+		cairo_set_source_rgb(cr, 112 / 255.0, 193 / 255.0, 179 / 255.0);
 	else
-		cairo_set_source_rgb(cr, 87 / 255.0, 122 / 255.0, 166 / 255.0);
+		cairo_set_source_rgb(cr, 36 / 255.0, 123 / 255.0, 160 / 255.0);
 	if (dp->len <= 5) // use hist instead of rectangle to make it visible
 	{
 		cairo_set_line_width(cr, lw);
