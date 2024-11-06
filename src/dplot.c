@@ -23,6 +23,20 @@ uint64_t kh_xval(const kh_t *h, const uint64_t n)
 		return kh_val(h, k);
 }
 
+void swap(char *xp, char *yp)
+{
+	*xp = *xp ^ *yp;
+	*yp = *xp ^ *yp;
+	*xp = *xp ^ *yp;
+}
+
+void reverse(char *str)
+{
+	int i = 0, j = strlen(str) - 1;
+	while (i < j)
+		swap(str + i++, str + j--);
+}
+
 void draw_rrect(cairo_t *cr)
 {
 	// a custom shape that could be wrapped in a function
@@ -99,15 +113,13 @@ void draw_yticks(cairo_t *cr, const int ymax)
 		int bufl = strlen(buf);
 		if (bufl >= 4)
 		{
-			puts(buf);
 			for (k = 0, j = bufl - 1; j >= 0; --j)
 			{
-				putchar(buf[j]);
 				buf_ts[k++] = buf[j];
-				if (k % 3 == 2)
+				if (k % 3 == 0 && j)
 					buf_ts[k++] = ',';
 			}
-			puts(buf_ts);
+			reverse(buf_ts);
 		}
 		else
 			strncpy(buf_ts, buf, 64);
