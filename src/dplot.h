@@ -32,7 +32,6 @@ typedef struct
 
 void kh_ins(kh_t *h, uint64_t n, uint64_t v);
 uint64_t kh_xval(const kh_t *h, const uint64_t n);
-void ld_pd(const char *fn, kh_t *pd);
 
 void draw_rrect(cairo_t *cr);
 void draw_yticks(cairo_t *cr, const int ymax);

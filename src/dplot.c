@@ -23,35 +23,6 @@ uint64_t kh_xval(const kh_t *h, const uint64_t n)
 		return kh_val(h, k);
 }
 
-void ld_pd(const char *fn, kh_t *pd)
-{
-	int c, ncol = 0;
-	uint64_t pos, dep;
-	FILE *fp = fopen(fn, "r");
-	assert(fp);
-	// count number of columns
-	do 
-	{
-		c = fgetc(fp);
-		if (feof(fp) || c == 10) break;
-		if (c == 9 || c == 32) ++ncol;
-	} while (1);
-	fseek(fp, 0, SEEK_SET);
-	if (ncol == 1)
-	{
-		while (fscanf(fp, "%"SCNu64" %"SCNu64"\n", &pos, &dep) != EOF)
-			if (dep)
-				kh_ins(pd, pos, dep);
-	}
-	else if (ncol == 2)
-	{
-		while (fscanf(fp, "%*s %"SCNu64" %"SCNu64"\n", &pos, &dep) != EOF)
-			if (dep)
-				kh_ins(pd, pos, dep);
-	}
-	fclose(fp);
-}
-
 void draw_rrect(cairo_t *cr)
 {
 	// a custom shape that could be wrapped in a function
@@ -107,7 +78,7 @@ void draw_arrow(
 
 void draw_yticks(cairo_t *cr, const int ymax)
 {
-	int i, j;
+	int i, j, k;
 	double x, y;
 	double w1 = 1.0, w2 = 1.0;
 	cairo_device_to_user_distance(cr, &w1, &w2);
@@ -116,19 +87,37 @@ void draw_yticks(cairo_t *cr, const int ymax)
 	cairo_text_extents_t ext;
 	const double dashes[] = {0.75, 5.0, 0.75, 5.0};
 	int ndash = sizeof(dashes) / sizeof(dashes[0]);
-	char buf[sizeof(uint64_t) * 8 + 1];
+	char buf[64] = {'\0'}, buf_ts[64] = {'\0'};
 	double h = ceil(log10(ymax));
 	cairo_text_extents(cr, "m", &ext);
 	double x_offset = ext.width;
 	for (i = 0; i <= h; ++i)
 	{
-		sprintf(buf, "%d", (int)pow(10, h - i));
+		memset(buf, 0, 64);
+		memset(buf_ts, 0, 64);
+		snprintf(buf, 64, "%d", (int)pow(10, h - i));
+		int bufl = strlen(buf);
+		if (bufl >= 4)
+		{
+			puts(buf);
+			for (k = 0, j = bufl - 1; j >= 0; --j)
+			{
+				putchar(buf[j]);
+				buf_ts[k++] = buf[j];
+				if (k % 3 == 2)
+					buf_ts[k++] = ',';
+			}
+			puts(buf_ts);
+		}
+		else
+			strncpy(buf_ts, buf, 64);
+		// add thousand separator
 		cairo_select_font_face(cr, "Open Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-		cairo_text_extents(cr, buf, &ext);
+		cairo_text_extents(cr, buf_ts, &ext);
 		x = -ext.width - x_offset / 2.5;
 		y = 1 - (double)i / (h + 1);
 		cairo_move_to(cr, x, DIM_Y - y * DIM_Y + ext.height / 2);
-		cairo_show_text(cr, buf);
+		cairo_show_text(cr, buf_ts);
 		// major ticks
 		cairo_move_to(cr, 0, DIM_Y - y * DIM_Y);
 		cairo_line_to(cr, x_offset * .75, DIM_Y - y * DIM_Y);

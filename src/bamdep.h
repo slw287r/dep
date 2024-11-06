@@ -25,7 +25,7 @@ extern const char *__progname;
 
 #define VERSION "0.1.0"
 #define CHUNK 0xFFFF
-#define MAXDP 0xFFFF
+#define MAXDP 0xFFFFF
 #define MINQL 35
 #define MINMQ 10
 
