@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	// multiple ctg offsets
-	uint64_t gl = 0, nd = 0; // genome length in total
+	uint64_t gl = 0, nd = 0, nd_wo_dup = 0; // genome length in total
 	kh_t *os = kh_init();
 	ld_os(hdr, ci, os, &gl);
 	/* dbg os
@@ -42,11 +42,27 @@ int main(int argc, char *argv[])
 	printf("%"PRIu64"\n", gl);
 	*/
 	uint32_t md = 0;
-	dp_t *dp = NULL;
-	ld_dp(arg->in, arg->ctg, &dp, &md, &nd);
-	/* debug dp
+	dp_t *dp = NULL, *dp_wo_dup = NULL;
+	// in parallel
+	threadpool thpool = thpool_init(2);
+	op_t *p = calloc(2, sizeof(op_t)); // freed by the caller
+	p->in = (p + 1)->in = arg->in;
+	p->ctg = (p + 1)->ctg = arg->ctg;
+	p->md = (p + 1)->md = &md;
+	p->dup = true;
+	p->dp = &dp;
+	p->nd = &nd;
+	thpool_add_work(thpool, ld_dp, (void *)(uintptr_t)p);
+	(p + 1)->dup = false;
+	(p + 1)->dp = &dp_wo_dup;
+	(p + 1)->nd = &nd_wo_dup;
+	thpool_add_work(thpool, ld_dp, (void *)(uintptr_t)(p + 1));
+	thpool_wait(thpool);
+	thpool_destroy(thpool);
+	free(p);
+	/* dbg dp
 	for (i = 0; i < nd; ++i)
-		printf("%s\t%d\t%d\t%d\n", hdr->target_name[dp[i].tid], dp[i].pos, dp[i].pos + dp[i].len, dp[i].dep);
+		printf("%s\t%"PRIu64"\t%"PRIu64"\t%d\n", hdr->target_name[dp[i].tid], dp[i].pos, dp[i].pos + dp[i].len, dp[i].dep);
 	*/
 	// dep plot
 	cairo_t *cr = NULL;
@@ -60,8 +76,8 @@ int main(int argc, char *argv[])
 	cr = cairo_create(sf);
 	char *tt, an[NAME_MAX] = {'\0'};
 	// prepare title
-	char *p = strrchr(arg->in, '/');
-	asprintf(&tt, "%s", p ? p + 1 : arg->in);
+	char *p2 = strrchr(arg->in, '/');
+	asprintf(&tt, "%s", p2 ? p2 + 1 : arg->in);
 	*strstr(tt, ".bam") = '\0';
 	if (ci != -1)
 		asprintf(&tt, "%s: %s", tt, arg->ctg);
@@ -72,10 +88,13 @@ int main(int argc, char *argv[])
 	cairo_scale(cr, DIM_X, DIM_Y);
 	// iterate dp array and draw to cr
 	for (i = 0; i < nd; ++i)
-		draw_ped1(cr, os, md, gl, dp + i);
+		draw_ped1(cr, os, md, gl, true, dp + i);
+	for (i = 0; i < nd_wo_dup; ++i)
+		draw_ped1(cr, os, md, gl, false, dp_wo_dup + i);
 	cairo_restore(cr);
 	draw_axis(cr, md, gl);
 	free(dp);
+	free(dp_wo_dup);
 	free(tt);
 	bam_hdr_destroy(hdr);
 	hts_close(fp);
@@ -170,7 +189,7 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 	}
 	// xlab
 	char xlab[] = "Genome coordinates";
-	char ylab[] = "Depth (PE)";
+	char ylab[] = "Depth";
 	cairo_set_font_size(cr, 18.0);
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
 	cairo_text_extents(cr, xlab, &ext);
@@ -231,17 +250,19 @@ void draw_axis(cairo_t *cr, uint32_t md, uint64_t gl)
 	cairo_show_text(cr, buf);
 }
 
-void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, dp_t *dp)
+void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, dp_t *dp)
 {
 	double w1 = 1.0, w2 = 1.0, x, y, w, h;
 	cairo_device_to_user_distance(cr, &w1, &w2);
 	double lw = fmin(w1, w2) / 2;
 	cairo_set_line_width(cr, lw);
 	cairo_set_line_cap(cr, CAIRO_LINE_CAP_BUTT);
-	cairo_set_source_rgb(cr, 87 / 255.0, 122 / 255.0, 166 / 255.0);
 	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
 	double ymx = ceil(log10(md)) + 1;
-	cairo_set_source_rgb(cr, 87 / 255.0, 122 / 255.0, 166 / 255.0);
+	if (dup)
+		cairo_set_source_rgb(cr, 87 / 255.0, 22 / 255.0, 66 / 255.0);
+	else
+		cairo_set_source_rgb(cr, 87 / 255.0, 122 / 255.0, 166 / 255.0);
 	if (dp->len <= 5) // use hist instead of rectangle to make it visible
 	{
 		cairo_set_line_width(cr, lw);
@@ -273,6 +294,8 @@ int read_bam(void *data, bam1_t *b)
 			break;
 		if (b->core.flag & (BAM_FUNMAP | BAM_FQCFAIL | BAM_FSECONDARY | BAM_FSUPPLEMENTARY))
 			continue;
+		if (!aux->keep_dup && (b->core.flag & BAM_FDUP))
+			continue;
 		if ((int)b->core.qual < aux->min_mapQ)
 			continue;
 		if (aux->min_len && bam_cigar2qlen(b->core.n_cigar, bam_get_cigar(b)) < aux->min_len)
@@ -282,17 +305,31 @@ int read_bam(void *data, bam1_t *b)
 	return ret;
 }
 
-void ld_dp(const char *fn, const char *ctg, dp_t **dp, uint32_t *md, uint64_t *nd)
+void ld_dp(void *op_)
 {
-	int64_t d = 0, m = CHUNK, n, p = 0;
+	// collect parameters
+	op_t *op = (op_t *)op_;
+	char *fn = op->in;
+	char *ctg = op->ctg;
+	bool dup = op->dup;
+	dp_t **dp = op->dp;
+	uint32_t *md = op->md;
+	uint64_t *nd = op->nd;
+	int64_t m = CHUNK;
 	*dp = malloc(m * sizeof(dp_t));
+	int64_t n = 0, p = 0, t = 0; // previous dep, pos and tid
 	int tid, pos, beg = 0, end = INT_MAX, n_plp;
 	aux_t *data = calloc(1, sizeof(aux_t));
 	data->fp = hts_open(fn, "r");
 	data->hdr = sam_hdr_read(data->fp);
 	hts_idx_t *idx = sam_index_load(data->fp, fn);
 	if (ctg)
+	{
 		data->iter = sam_itr_querys(idx, data->hdr, ctg);
+		beg = data->iter->beg;
+		end = data->iter->end;
+	}
+	data->keep_dup = dup;
 	hts_idx_destroy(idx);
 	bam_hdr_t *h = data->hdr;
 	bam_mplp_t mplp = bam_mplp_init(1, read_bam, (void**)&data);
@@ -303,53 +340,50 @@ void ld_dp(const char *fn, const char *ctg, dp_t **dp, uint32_t *md, uint64_t *n
 		if (pos < beg)
 			continue;
 		if (pos >= end || tid >= h->n_targets)
-			break;
-		if ((n = n_plp))
 		{
-			if (n != d)
+			if (n && p)
 			{
-				if (p)
-				{
-					(*dp)[*nd].len = pos - (*dp)[*nd].pos + 1;
-					d = p = 0;
-					if (++*nd == m)
-					{
-						m <<= 1;
-						*dp = realloc(*dp, m * sizeof(dp_t));
-					}
-				}
-				(*dp)[*nd].tid = tid;
-				(*dp)[*nd].pos = pos;
-				(*dp)[*nd].dep = n;
-				*md = fmax(*md, n);
-			}
-			d = n;
-			p = pos;
-		}
-		else
-		{
-			if (d)
-			{
-				(*dp)[*nd].len = pos - (*dp)[*nd].pos + 1;
+				(*dp)[*nd].len = p - (*dp)[*nd].pos + 1;
 				if (++*nd == m)
 				{
 					m <<= 1;
 					*dp = realloc(*dp, m * sizeof(dp_t));
 				}
 			}
-			d = p = 0;
+			n = p = 0;
+			break;
 		}
+		if (pos - p > 1 || n_plp != n || tid != t)
+		{
+			if (n && p)
+			{
+				(*dp)[*nd].len = p - (*dp)[*nd].pos + 1;
+				if (++*nd == m)
+				{
+					m <<= 1;
+					*dp = realloc(*dp, m * sizeof(dp_t));
+				}
+			}
+			(*dp)[*nd].tid = tid;
+			(*dp)[*nd].pos = pos;
+			(*dp)[*nd].dep = n_plp;
+			if (dup)
+				*md = fmax(*md, n_plp);
+		}
+		n = n_plp;
+		p = pos;
+		t = tid;
 	}
-	if (d)
+	if (n && p)
 	{
-		(*dp)[*nd].len = pos - (*dp)[*nd].pos + 1;
+		(*dp)[*nd].len = p - (*dp)[*nd].pos + 1;
 		if (++*nd == m)
 		{
 			m <<= 1;
 			*dp = realloc(*dp, m * sizeof(dp_t));
 		}
 	}
-	d = p = 0;
+	n = p = 0;
 	*dp = realloc(*dp, *nd * sizeof(dp_t));
 	bam_hdr_destroy(data->hdr);
 	if (data->fp)
@@ -423,7 +457,7 @@ void prs_arg(int argc, char **argv, arg_t *arg)
 {
 	int c = 0;
 	ketopt_t opt = KETOPT_INIT;
-	const char *opt_str = "i:o:m:l:s:c:hv";
+	const char *opt_str = "i:o:m:l:s:c:dhv";
 	while ((c = ketopt(&opt, argc, argv, 1, opt_str, long_options)) >= 0)
 	{
 		switch (c)

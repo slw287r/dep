@@ -18,6 +18,7 @@
 
 #include "ketopt.h"
 #include "dplot.h"
+#include "thpool.h"
 #include "version.h"
 
 extern const char *__progname;
@@ -48,6 +49,15 @@ typedef struct
 	int mpq, len;
 } arg_t;
 
+typedef struct
+{
+	char *in, *ctg;
+	dp_t **dp;
+	uint32_t *md;
+	uint64_t *nd;
+	bool dup;
+} op_t;
+
 static ko_longopt_t long_options[] = {
 	{ "in",        ko_required_argument, 'i' },
 	{ "out",       ko_required_argument, 'o' },
@@ -66,18 +76,19 @@ typedef struct // auxiliary data structure
 	bam_hdr_t *hdr;  // the file header
 	hts_itr_t *iter; // NULL if a region not specified
 	int min_mapQ, min_len; // mapQ filter; length filter
+	bool keep_dup; // keep duplicates
 } aux_t;
 
 void prs_arg(int argc, char **argv, arg_t *arg);
 void ld_os(bam_hdr_t *hdr, int ci, kh_t *os, uint64_t *gl);
 int read_bam(void *data, bam1_t *b);
-void ld_dp(const char *fn, const char *ctg, dp_t **dp, uint32_t *md, uint64_t *nd);
+void ld_dp(void *op);
 void dump_dp(bam_hdr_t *hdr, dp_t *dp, uint64_t nd, const char *out);
 void prep_an(const dp_t *dp, uint64_t nd, uint64_t gl, char *an);
 void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 		const kh_t *os, const char *tt, const char *st, const char *an, uint32_t md,
 		uint64_t gl);
-void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, dp_t *dp);
+void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, dp_t *dp);
 void draw_axis(cairo_t *cr, uint32_t md, uint64_t gl);
 int is_gzip(const char *fn);
 bool ends_with(const char *str, const char *sfx);
