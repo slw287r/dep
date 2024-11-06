@@ -69,7 +69,7 @@ void draw_rrect(cairo_t *cr)
 	cairo_arc (cr, x + radius, y + height - radius, radius, 90 * degrees, 180 * degrees);
 	cairo_arc (cr, x + radius, y + radius, radius, 180 * degrees, 270 * degrees);
 	cairo_close_path (cr);
-	cairo_set_source_rgba (cr, .96, .96, .96, .86);
+	cairo_set_source_rgba (cr, .96, .96, .96, .96);
 	cairo_fill(cr);
 }
 
@@ -133,13 +133,13 @@ void draw_yticks(cairo_t *cr, const int ymax)
 		cairo_move_to(cr, 0, DIM_Y - y * DIM_Y);
 		cairo_line_to(cr, x_offset * .75, DIM_Y - y * DIM_Y);
 		cairo_stroke(cr);
-			cairo_set_line_width(cr, fmin(w1, w2) / 4);
-			cairo_set_dash(cr, dashes, ndash, 0);
-			cairo_move_to(cr, x_offset * .75, DIM_Y - y * DIM_Y);
-			cairo_line_to(cr, DIM_X, DIM_Y - y * DIM_Y);
-			cairo_stroke(cr);
-			cairo_set_dash(cr, dashes, 0, 0);
-			cairo_set_line_width(cr, fmin(w1, w2) / 2);
+		cairo_set_line_width(cr, fmin(w1, w2) / 4);
+		cairo_set_dash(cr, dashes, ndash, 0);
+		cairo_move_to(cr, x_offset * .75, DIM_Y - y * DIM_Y);
+		cairo_line_to(cr, DIM_X, DIM_Y - y * DIM_Y);
+		cairo_stroke(cr);
+		cairo_set_dash(cr, dashes, 0, 0);
+		cairo_set_line_width(cr, fmin(w1, w2) / 2);
 		// minor ticks
 		for (j = 2; j <= 9 && i < h; ++j)
 		{
@@ -161,8 +161,10 @@ void draw_yticks(cairo_t *cr, const int ymax)
 
 void draw_legend(cairo_t *cr)
 {
-	double yshift = -7.5;
 	cairo_set_font_size(cr, 17.5);
+	cairo_text_extents_t ext;
+	cairo_text_extents(cr, "m", &ext);
+	double yshift = -ext.width / 2;
 	cairo_set_line_width(cr, 0.5);
 	cairo_set_source_rgb(cr, 36 / 255.0, 123 / 255.0, 160 / 255.0);
 	cairo_rectangle(cr, 12.5, -12.5 + yshift, 12.5, 12.5);
@@ -173,11 +175,11 @@ void draw_legend(cairo_t *cr)
 	cairo_set_source_rgb(cr, 0, 0, 0);
 	cairo_show_text(cr, "w/o dup");
 	cairo_set_source_rgb(cr, 112 / 255.0, 193 / 255.0, 179 / 255.0);
-	cairo_rectangle(cr, 207.5, -12.5 + yshift, 12.5, 12.5);
+	cairo_rectangle(cr, 107.5, -12.5 + yshift, 12.5, 12.5);
 	cairo_stroke_preserve(cr);
 	cairo_set_source_rgba(cr, 112 / 255.0, 193 / 255.0, 179 / 255.0, 0.9);
 	cairo_fill(cr);
-	cairo_move_to(cr, 222.5, yshift);
+	cairo_move_to(cr, 122.5, yshift);
 	cairo_set_source_rgb(cr, 0, 0, 0);
 	cairo_show_text(cr, "w/ dup");
 }

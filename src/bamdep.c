@@ -172,7 +172,7 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 		cairo_select_font_face(cr, "serif", CAIRO_FONT_SLANT_ITALIC, CAIRO_FONT_WEIGHT_BOLD);
 		cairo_text_extents(cr, st, &ext);
 		x = DIM_X / 2.0 - (ext.width / 2.0 + ext.x_bearing);
-		y = ext.height + ext.y_bearing * 2;
+		y = ext.height + ext.y_bearing * 1.5;
 		cairo_move_to(cr, x, y);
 		cairo_show_text(cr, st);
 	}
@@ -203,7 +203,10 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 	cairo_translate(cr, MARGIN / 1.25, HEIGHT / 2.0); // translate origin to the center
 	cairo_rotate(cr, 3 * M_PI / 2.0);
 	cairo_text_extents(cr, ylab, &ext);
-	cairo_move_to(cr, MARGIN / 2.5, -MARGIN * 1.25);
+	char dpw[NAME_MAX];
+	snprintf(dpw, NAME_MAX, "%d", md);
+	cairo_text_extents(cr, dpw, &ext);
+	cairo_move_to(cr, MARGIN / 2.5, fmax(-MARGIN * 1.45, -MARGIN - ext.width));
 	cairo_show_text(cr, ylab);
 	cairo_restore(cr);
 	// contig shades
@@ -243,10 +246,11 @@ void draw_axis(cairo_t *cr, uint32_t md, uint64_t gl)
 		sprintf(buf, "%.2fK", gl * 1.0e-3);
 	else
 		sprintf(buf, "%"PRIu64, gl);
+	cairo_set_font_size(cr, 16.0);
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_text_extents(cr, buf, &ext);
 	x = DIM_X - ext.width - ext.x_bearing;
-	y = DIM_Y + MARGIN / 4.0 - (ext.height / 2 + ext.y_bearing);
+	y = DIM_Y + ext.height / 2 - ext.y_bearing;
 	cairo_move_to(cr, x, y);
 	cairo_show_text(cr, buf);
 }

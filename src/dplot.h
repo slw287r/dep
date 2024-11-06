@@ -16,8 +16,8 @@
  */
 // depth plots
 #define MARGIN 35*3
-#define DIM_X (605*2.5)
-#define DIM_Y (165*2.5)
+#define DIM_X (605*2)
+#define DIM_Y (165*2)
 #define WIDTH (DIM_X + MARGIN)
 #define HEIGHT (DIM_Y + MARGIN)
 
