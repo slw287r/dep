@@ -101,7 +101,7 @@ void draw_yticks(cairo_t *cr, const int ymax)
 	cairo_text_extents_t ext;
 	const double dashes[] = {0.75, 5.0, 0.75, 5.0};
 	int ndash = sizeof(dashes) / sizeof(dashes[0]);
-	char buf[64] = {'\0'}, buf_ts[64] = {'\0'};
+	char buf[64], buf_ts[64];
 	double h = ceil(log10(ymax));
 	cairo_text_extents(cr, "m", &ext);
 	double x_offset = ext.width;
