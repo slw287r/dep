@@ -116,7 +116,7 @@ void draw_yticks(cairo_t *cr, const int ymax)
 			for (k = 0, j = bufl - 1; j >= 0; --j)
 			{
 				buf_ts[k++] = buf[j];
-				if (k % 3 == 0 && j)
+				if ((bufl - 1 - j) % 3 == 2 && j > 0)
 					buf_ts[k++] = ',';
 			}
 			reverse(buf_ts);
