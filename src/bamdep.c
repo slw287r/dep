@@ -544,12 +544,12 @@ void usage()
 {
 	int w = 58;
 	horiz(w, true);
-	char title[] = "\e[1mCalculate the depth of coverage of microbial genome\e[0m";
+	char title[] = "\e[1mPlot sequencing depth of contig or whole genome in bam\e[0m";
 	int title_len = strlen_wo_esc(title);
 	printf("%*.*s\n", (int)((w - title_len) / 2 + strlen(title)), (int)strlen(title), title);
 	dep_sch();
 	horiz(w, false);
-	printf("%s \e[1mUsage\e[0m: \e[1;31m%s\e[0;0m \e[1;90m[options]\e[0;0m --in <bam> --out <bed>\n", BUL, __progname);
+	printf("%s \e[1mUsage\e[0m: \e[1;31m%s\e[0;0m \e[1;90m[options]\e[0;0m --in <bam> --out <png>\n", BUL, __progname);
 	putchar('\n');
 	puts(BUL " \e[1mOptions\e[0m:");
 	puts("  -i, --in  \e[3mFILE\e[0m   Input BAM file with bai index");
