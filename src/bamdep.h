@@ -58,6 +58,14 @@ typedef struct
 	bool dup;
 } op_t;
 
+typedef struct
+{
+	bam_hdr_t *hdr;
+	dp_t *dp;
+	uint64_t nd;
+	char *out;
+} dd_t;
+
 static ko_longopt_t long_options[] = {
 	{ "in",        ko_required_argument, 'i' },
 	{ "out",       ko_required_argument, 'o' },
@@ -85,7 +93,7 @@ void prs_arg(int argc, char **argv, arg_t *arg);
 void ld_os(bam_hdr_t *hdr, int ci, kh_t *os, uint64_t *gl);
 int read_bam(void *data, bam1_t *b);
 void ld_dp(void *op);
-void dump_dp(bam_hdr_t *hdr, dp_t *dp, uint64_t nd, const char *out);
+void dump_dp(void *op);
 void prep_an(const dp_t *dp, uint64_t nd, uint64_t gl, char *an);
 void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 		const kh_t *os, const char *tt, const char *st, const char *an, uint32_t md,

@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	dp_t *dp = NULL, *dp_wo_dup = NULL;
 	// in parallel
 	threadpool thpool = thpool_init(2);
-	op_t *p = calloc(2, sizeof(op_t)); // freed by the caller
+	op_t *p = calloc(2, sizeof(op_t));
 	p->in = (p + 1)->in = arg->in;
 	p->ctg = (p + 1)->ctg = arg->ctg;
 	p->md = (p + 1)->md = &md;
@@ -97,10 +97,26 @@ int main(int argc, char *argv[])
 	cairo_surface_destroy(sf);
 	cairo_destroy(cr);
 	// output depth if applicable
+	thpool = thpool_init(2);
+	dd_t *q = calloc(2, sizeof(dd_t));
+	q->hdr = (q + 1)->hdr = hdr;
 	if (arg->dep)
-		dump_dp(hdr, dp_wo_dup, nd_wo_dup, arg->dep);
+	{
+		q->dp = dp_wo_dup;
+		q->nd = nd_wo_dup;
+		q->out = arg->dep;
+		thpool_add_work(thpool, dump_dp, (void *)(uintptr_t)q);
+	}
 	if (arg->dup)
-		dump_dp(hdr, dp, nd, arg->dup);
+	{
+		(q + 1)->dp = dp;
+		(q + 1)->nd = nd;
+		(q + 1)->out = arg->dup;
+		thpool_add_work(thpool, dump_dp, (void *)(uintptr_t)(q + 1));
+	}
+	thpool_wait(thpool);
+	thpool_destroy(thpool);
+	free(q);
 	free(dp);
 	free(dp_wo_dup);
 	free(tt);
@@ -402,8 +418,13 @@ void ld_dp(void *op_)
 	free(data);
 }
 
-void dump_dp(bam_hdr_t *hdr, dp_t *dp, uint64_t nd, const char *out)
+void dump_dp(void *op_)
 {
+	dd_t *op = (dd_t *)op_;
+	bam_hdr_t *hdr = op->hdr;
+	dp_t *dp = op->dp;
+	uint64_t nd = op->nd;
+	char *out = op->out;
 	uint64_t i;
 	kstring_t ks = {0, 0, NULL};
 	BGZF *fp = bgzf_open(out, "w");
