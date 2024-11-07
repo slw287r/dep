@@ -15,9 +15,5 @@ OBJS = $(patsubst %.c, %.o, $(SRC))
 bamdep: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
-test: bamdep
-	$^ -i ../dat/toy.bam -o ../dat/toy.bed.gz -p ../dat/toy.png -s 'Talaromyces marneffei'
-	open ../dat/toy.png
-
 clean:
-	rm -f bamdep *.o ../dat/toy.bed* ../dat/toy.png ../dat/toy.svg
+	rm -f bamdep *.o
