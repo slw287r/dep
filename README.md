@@ -19,3 +19,7 @@ bamdep -i a.bam -o a.png -s 'subtitle'
 * RSV
 
 <img src="https://github.com/user-attachments/assets/7223c000-3583-4eb7-900d-d059ba5c8f09" width=768>
+
+## Note
+
+Please use the Linux x86-64 static build in the `bin` folder.
