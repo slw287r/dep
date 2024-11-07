@@ -494,6 +494,18 @@ void prs_arg(int argc, char **argv, arg_t *arg)
 	snprintf(bai, PATH_MAX, "%s.bai", arg->in);
 	if (access(bai, R_OK))
 		error("Error: bam's index file (.bai) is required, please use samtools sort and index to create it.\n");
+	if (!arg->out)
+	{
+		static char png[PATH_MAX];
+		char *p = strrchr(arg->in, '/');
+		if (p)
+			strncpy(png, p + 1, PATH_MAX);
+		else
+			strncpy(png, arg->in, PATH_MAX);
+		p = strrchr(png, '.');
+		strncpy(p + 1, "png", 3);
+		arg->out = png;
+	}
 }
 
 int strlen_wo_esc(const char *str)
