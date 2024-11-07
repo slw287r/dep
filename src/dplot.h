@@ -6,6 +6,8 @@
 #include <math.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <locale.h>
+#include <monetary.h>
 #include <cairo/cairo.h>
 #include <cairo/cairo-svg.h>
 #include "khashl.h"

@@ -23,20 +23,6 @@ uint64_t kh_xval(const kh_t *h, const uint64_t n)
 		return kh_val(h, k);
 }
 
-void swap(char *xp, char *yp)
-{
-	*xp = *xp ^ *yp;
-	*yp = *xp ^ *yp;
-	*xp = *xp ^ *yp;
-}
-
-void reverse(char *str)
-{
-	int i = 0, j = strlen(str) - 1;
-	while (i < j)
-		swap(str + i++, str + j--);
-}
-
 void draw_rrect(cairo_t *cr)
 {
 	// a custom shape that could be wrapped in a function
@@ -92,7 +78,7 @@ void draw_arrow(
 
 void draw_yticks(cairo_t *cr, const int ymax)
 {
-	int i, j, k;
+	int i, j;
 	double x, y;
 	double w1 = 1.0, w2 = 1.0;
 	cairo_device_to_user_distance(cr, &w1, &w2);
@@ -101,35 +87,21 @@ void draw_yticks(cairo_t *cr, const int ymax)
 	cairo_text_extents_t ext;
 	const double dashes[] = {0.75, 5.0, 0.75, 5.0};
 	int ndash = sizeof(dashes) / sizeof(dashes[0]);
-	char buf[64], buf_ts[64];
+	char buf[64];
+	setlocale(LC_ALL, "");
 	double h = ceil(log10(ymax));
 	cairo_text_extents(cr, "m", &ext);
 	double x_offset = ext.width;
 	for (i = 0; i <= h; ++i)
 	{
-		memset(buf, 0, 64);
-		memset(buf_ts, 0, 64);
-		snprintf(buf, 64, "%d", (int)pow(10, h - i));
-		int bufl = strlen(buf);
-		if (bufl >= 4)
-		{
-			for (k = 0, j = bufl - 1; j >= 0; --j)
-			{
-				buf_ts[k++] = buf[j];
-				if ((bufl - 1 - j) % 3 == 2 && j > 0)
-					buf_ts[k++] = ',';
-			}
-			reverse(buf_ts);
-		}
-		else
-			strncpy(buf_ts, buf, 64);
+		strfmon(buf, 64, "%.0n", pow(10, h - i));
 		// add thousand separator
 		cairo_select_font_face(cr, "Open Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-		cairo_text_extents(cr, buf_ts, &ext);
+		cairo_text_extents(cr, buf + 1, &ext);
 		x = -ext.width - x_offset / 2.5;
 		y = 1 - (double)i / (h + 1);
 		cairo_move_to(cr, x, DIM_Y - y * DIM_Y + ext.height / 2);
-		cairo_show_text(cr, buf_ts);
+		cairo_show_text(cr, buf + 1);
 		// major ticks
 		cairo_move_to(cr, 0, DIM_Y - y * DIM_Y);
 		cairo_line_to(cr, x_offset * .75, DIM_Y - y * DIM_Y);
