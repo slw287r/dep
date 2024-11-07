@@ -45,7 +45,7 @@ extern const char *__progname;
 // argument struct
 typedef struct
 {
-	char *in, *out, *sub, *ann, *ctg;
+	char *in, *out, *sub, *ann, *ctg, *dep, *dup;
 	int mpq, len;
 } arg_t;
 
@@ -65,6 +65,8 @@ static ko_longopt_t long_options[] = {
 	{ "len",       ko_required_argument, 'l' },
 	{ "sub",       ko_required_argument, 's' },
 	{ "ctg",       ko_required_argument, 'c' },
+	{ "dep",       ko_required_argument, 'd' },
+	{ "dup",       ko_required_argument, 'D' },
 	{ "help",      ko_no_argument, 'h' },
 	{ "version",   ko_no_argument, 'v' },
 	{ NULL, 0, 0 }

@@ -94,6 +94,13 @@ int main(int argc, char *argv[])
 	cairo_restore(cr);
 	draw_axis(cr, md, gl);
 	draw_legend(cr);
+	cairo_surface_destroy(sf);
+	cairo_destroy(cr);
+	// output depth if applicable
+	if (arg->dep)
+		dump_dp(hdr, dp_wo_dup, nd_wo_dup, arg->dep);
+	if (arg->dup)
+		dump_dp(hdr, dp, nd, arg->dup);
 	free(dp);
 	free(dp_wo_dup);
 	free(tt);
@@ -101,8 +108,6 @@ int main(int argc, char *argv[])
 	hts_close(fp);
 	if (ends_with(arg->out, ".png"))
 		cairo_surface_write_to_png(cairo_get_target(cr), arg->out);
-	cairo_surface_destroy(sf);
-	cairo_destroy(cr);
 	kh_destroy(os);
 	free(arg);
 	return 0;
@@ -401,36 +406,25 @@ void dump_dp(bam_hdr_t *hdr, dp_t *dp, uint64_t nd, const char *out)
 {
 	uint64_t i;
 	kstring_t ks = {0, 0, NULL};
-	if (out && ends_with(out, ".gz"))
+	BGZF *fp = bgzf_open(out, "w");
+	for (i = 0; i < nd; ++i)
 	{
-		BGZF *fp = bgzf_open(out, "w");
-		for (i = 0; i < nd; ++i)
+		ksprintf(&ks, "%s\t%"PRIu64"\t%"PRIu64"\t%d\n", hdr->target_name[dp[i].tid],
+				dp[i].pos, dp[i].pos + dp[i].len, dp[i].dep);
+		if (ks.l >= BGZF_BLOCK_SIZE)
 		{
-			ksprintf(&ks, "%s\t%"PRIu64"\t%"PRIu64"\t%d\n", hdr->target_name[dp[i].tid],
-					dp[i].pos, dp[i].pos + dp[i].len, dp[i].dep);
-			if (ks.l >= BGZF_BLOCK_SIZE)
-			{
-				if (ks.l != bgzf_write(fp, ks.s, ks.l))
-					error("Error writing to file [%s]\n", out);
-				ks.l = 0;
-			}
+			if (ks.l != bgzf_write(fp, ks.s, ks.l))
+				error("Error writing to file [%s]\n", out);
+			ks.l = 0;
 		}
-		if (ks.l && ks.l != bgzf_write(fp, ks.s, ks.l))
-			error("Error writing to file [%s]\n", out);
-		ks.l = 0;
-		bgzf_close(fp);
-		tbx_conf_t conf = tbx_conf_bed;
-		if(tbx_index_build3(out, NULL, 14, 8, &conf))
-			error("Error building index for [%s]\n", out);
 	}
-	else
-	{
-		FILE *fp = out ? fopen(out, "w") : stdout;
-		for (i = 0; i < nd; ++i)
-			fprintf(fp, "%s\t%"PRIu64"\t%"PRIu64"\t%d\n", hdr->target_name[dp[i].tid],
-					dp[i].pos, dp[i].pos + dp[i].len, dp[i].dep);
-		fclose(fp);
-	}
+	if (ks.l && ks.l != bgzf_write(fp, ks.s, ks.l))
+		error("Error writing to file [%s]\n", out);
+	ks.l = 0;
+	bgzf_close(fp);
+	tbx_conf_t conf = tbx_conf_bed;
+	if(tbx_index_build3(out, NULL, 14, 8, &conf))
+		error("Error building index for [%s]\n", out);
 	ks_release(&ks);
 }
 
@@ -462,7 +456,7 @@ void prs_arg(int argc, char **argv, arg_t *arg)
 {
 	int c = 0;
 	ketopt_t opt = KETOPT_INIT;
-	const char *opt_str = "i:o:m:l:s:c:dhv";
+	const char *opt_str = "i:o:m:l:s:c:d:D:hv";
 	while ((c = ketopt(&opt, argc, argv, 1, opt_str, long_options)) >= 0)
 	{
 		switch (c)
@@ -473,6 +467,8 @@ void prs_arg(int argc, char **argv, arg_t *arg)
 			case 'l': arg->len = atoi(opt.arg); break;
 			case 's': arg->sub = opt.arg; break;
 			case 'c': arg->ctg = opt.arg; break;
+			case 'd': arg->dep = opt.arg; break;
+			case 'D': arg->dup = opt.arg; break;
 			case 'h': usage(); break;
 			case 'v':
 				if (strlen(BRANCH_COMMIT))
@@ -505,6 +501,31 @@ void prs_arg(int argc, char **argv, arg_t *arg)
 		p = strrchr(png, '.');
 		strncpy(p + 1, "png", 3);
 		arg->out = png;
+	}
+	// make sure depth outputs are properly suffixed
+	if (arg->dep)
+	{
+		if (!ends_with(arg->dep, ".bed.gz"))
+		{
+			static char dep[PATH_MAX];
+			strncpy(dep, arg->dep, PATH_MAX);
+			char *p = strrchr(dep, '.');
+			if (p)
+				strncpy(p + 1, ".bed.gz", 6);
+			arg->dep = dep;
+		}
+	}
+	if (arg->dup)
+	{
+		if (!ends_with(arg->dup, ".bed.gz"))
+		{
+			static char dup[PATH_MAX];
+			strncpy(dup, arg->dup, PATH_MAX);
+			char *p = strrchr(dup, '.');
+			if (p)
+				strncpy(p + 1, ".bed.gz", 6);
+			arg->dup = dup;
+		}
 	}
 }
 
@@ -566,8 +587,10 @@ void usage()
 	puts(BUL " \e[1mOptions\e[0m:");
 	puts("  -i, --in  \e[3mFILE\e[0m   Input BAM file with bai index");
 	puts("  -o, --out \e[3mSTR\e[0m    Output depth plot png \e[90m[${prefix}.png]\e[0m");
-	puts("  -s, --sub \e[3mFILE\e[0m   Sub-title of depth plot \e[90m[none]\e[0m");
+	puts("  -s, --sub \e[3mSTR\e[0m    Sub-title of depth plot \e[90m[none]\e[0m");
 	puts("  -c, --ctg \e[3mSTR\e[0m    Restrict analysis to this contig \e[90m[none]\e[0m");
+	puts("  -d, --dep \e[3mSTR\e[0m    Depth (w/o dup) bed4 file \e[90m[none]\e[0m");
+	puts("  -D, --dup \e[3mSTR\e[0m    Depth (w/ dup) bed4 file \e[90m[none]\e[0m");
 	putchar('\n');
 	puts("  -h               Show help message");
 	puts("  -v               Display program version");
