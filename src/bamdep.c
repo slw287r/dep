@@ -94,6 +94,8 @@ int main(int argc, char *argv[])
 	cairo_restore(cr);
 	draw_axis(cr, md, gl);
 	draw_legend(cr);
+	if (ends_with(arg->out, ".png"))
+		cairo_surface_write_to_png(cairo_get_target(cr), arg->out);
 	cairo_surface_destroy(sf);
 	cairo_destroy(cr);
 	// output depth if applicable
@@ -122,8 +124,6 @@ int main(int argc, char *argv[])
 	free(tt);
 	bam_hdr_destroy(hdr);
 	hts_close(fp);
-	if (ends_with(arg->out, ".png"))
-		cairo_surface_write_to_png(cairo_get_target(cr), arg->out);
 	kh_destroy(os);
 	free(arg);
 	return 0;
