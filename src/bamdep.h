@@ -99,7 +99,8 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 		const kh_t *os, const char *tt, const char *st, const char *an, uint32_t md,
 		uint64_t gl);
 void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, dp_t *dp);
-void draw_axis(cairo_t *cr, uint32_t md, uint32_t n_targets, uint64_t gl);
+void draw_axis(cairo_t *cr, uint32_t md, const char *ctg, uint32_t n_targets,
+		uint64_t gl);
 int is_gzip(const char *fn);
 bool ends_with(const char *str, const char *sfx);
 int strlen_wo_esc(const char *str);

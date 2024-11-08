@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < nd_wo_dup; ++i)
 		draw_ped1(cr, os, md, gl, false, dp_wo_dup + i);
 	cairo_restore(cr);
-	draw_axis(cr, md, hdr->n_targets, gl);
+	draw_axis(cr, md, arg->ctg, hdr->n_targets, gl);
 	draw_legend(cr);
 	if (ends_with(arg->out, ".png"))
 		cairo_surface_write_to_png(cairo_get_target(cr), arg->out);
@@ -268,7 +268,8 @@ double nice_interval(const double x, const double n)
 	return nice_intv;
 }
 
-void draw_axis(cairo_t *cr, uint32_t md, uint32_t n_targets, uint64_t gl)
+void draw_axis(cairo_t *cr, uint32_t md, const char *ctg, uint32_t n_targets,
+		uint64_t gl)
 {
 	double x, i, j, k, l;
 	cairo_text_extents_t ext;
@@ -283,10 +284,11 @@ void draw_axis(cairo_t *cr, uint32_t md, uint32_t n_targets, uint64_t gl)
 	cairo_move_to(cr, 0, DIM_Y);
 	cairo_line_to(cr, DIM_X, DIM_Y); // xaxis
 	draw_yticks(cr, md);
-	if (n_targets != 1)
+	if (!ctg && n_targets != 1)
+	{
 		draw_arrow(cr, 0, DIM_Y, DIM_X, DIM_Y); // xaxis
-	if (n_targets != 1)
 		return;
+	}
 	if (gl >= 1e9)
 		l = gl * 1.0e-9;
 	else if (gl >= 1e6)
