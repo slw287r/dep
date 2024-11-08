@@ -44,23 +44,18 @@ void draw_rrect(cairo_t *cr)
 	cairo_fill(cr);
 }
 
-void draw_arrow(
-		cairo_t *cr,
-		double start_x,
-		double start_y,
-		double end_x,
-		double end_y)
+void draw_arrow(cairo_t *cr, double start_x, double start_y, double end_x, double end_y)
 {
 	double angle = atan2(end_y - start_y, end_x - start_x) + M_PI;
 	double arrow_degrees_ = M_PI / 15;
-	double arrow_lenght_ = 20;
-	double x1 = end_x + arrow_lenght_ * cos(angle - arrow_degrees_);
-	double y1 = end_y + arrow_lenght_ * sin(angle - arrow_degrees_);
-	double x2 = end_x + arrow_lenght_ * cos(angle + arrow_degrees_);
-	double y2 = end_y + arrow_lenght_ * sin(angle + arrow_degrees_);
+	double arrow_length_ = 15;
+	double x1 = end_x + arrow_length_ * cos(angle - arrow_degrees_);
+	double y1 = end_y + arrow_length_ * sin(angle - arrow_degrees_);
+	double x2 = end_x + arrow_length_ * cos(angle + arrow_degrees_);
+	double y2 = end_y + arrow_length_ * sin(angle + arrow_degrees_);
 	double w1 = 1.0, w2 = 1.0;
 	cairo_device_to_user_distance(cr, &w1, &w2);
-	cairo_set_line_width(cr, fmin(w1, w2));
+	cairo_set_line_width(cr, fmin(w1, w2) / 2.0);
 	cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
 	cairo_set_source_rgb(cr, 0, 0, 0);
 	cairo_move_to(cr, start_x, start_y);

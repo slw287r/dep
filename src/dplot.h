@@ -36,6 +36,6 @@ void kh_ins(kh_t *h, uint64_t n, uint64_t v);
 uint64_t kh_xval(const kh_t *h, const uint64_t n);
 
 void draw_rrect(cairo_t *cr);
-void draw_yticks(cairo_t *cr, const int ymax);
 void draw_arrow(cairo_t *cr, double start_x, double start_y, double end_x, double end_y);
+void draw_yticks(cairo_t *cr, const int ymax);
 void draw_legend(cairo_t *cr);

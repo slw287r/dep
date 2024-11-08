@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < nd_wo_dup; ++i)
 		draw_ped1(cr, os, md, gl, false, dp_wo_dup + i);
 	cairo_restore(cr);
-	draw_axis(cr, md, gl);
+	draw_axis(cr, md, hdr->n_targets, gl);
 	draw_legend(cr);
 	if (ends_with(arg->out, ".png"))
 		cairo_surface_write_to_png(cairo_get_target(cr), arg->out);
@@ -210,13 +210,21 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 		cairo_show_text(cr, zlab);
 	}
 	// xlab
-	char xlab[] = "Genome coordinates";
+	char xlab[NAME_MAX];
+	if (gl >= 1e9)
+		snprintf(xlab, NAME_MAX, "Genome coordinates (%.2fGbp)", gl * 1.0e-9);
+	else if (gl >= 1e6)
+		snprintf(xlab, NAME_MAX, "Genome coordinates (%.2fMbp)", gl * 1.0e-6);
+	else if (gl >= 1e3)
+		snprintf(xlab, NAME_MAX, "Genome coordinates (%.2fKbp)", gl * 1.0e-3);
+	else
+		snprintf(xlab, NAME_MAX, "Genome coordinates (%.2fbp)", gl * 1.0e-0);
 	char ylab[] = "Depth";
 	cairo_set_font_size(cr, 18.0);
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
 	cairo_text_extents(cr, xlab, &ext);
 	x = DIM_X / 2.0 - (ext.width / 2.0 + ext.x_bearing);
-	y = DIM_Y + MARGIN / 4.0 - (ext.height / 2 + ext.y_bearing);
+	y = DIM_Y + MARGIN / 4.0 - (ext.height / 5 + ext.y_bearing);
 	cairo_move_to(cr, x, y);
 	cairo_show_text(cr, xlab);
 	cairo_save(cr);
@@ -244,11 +252,26 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 	}
 }
 
-void draw_axis(cairo_t *cr, uint32_t md, uint64_t gl)
+double nice_interval(const double x, const double n)
 {
-	double x, y;
+	double rough_intv = x / n;
+	double magnitude = pow(10, floor(log10(rough_intv)));
+	double nice_intv;
+	if (rough_intv / magnitude <= 1)
+		nice_intv = 1 * magnitude;
+	else if (rough_intv / magnitude <= 2)
+		nice_intv = 2 * magnitude;
+	else if (rough_intv / magnitude <= 5)
+		nice_intv = 5 * magnitude;
+	else
+		nice_intv = 10 * magnitude;
+	return nice_intv;
+}
+
+void draw_axis(cairo_t *cr, uint32_t md, uint32_t n_targets, uint64_t gl)
+{
+	double x, i, j, k, l;
 	cairo_text_extents_t ext;
-	draw_arrow(cr, 0, DIM_Y, DIM_X, DIM_Y); // xaxis
 	double w1 = 1.0, w2 = 1.0;
 	cairo_set_font_size(cr, 16.0);
 	cairo_device_to_user_distance(cr, &w1, &w2);
@@ -257,23 +280,45 @@ void draw_axis(cairo_t *cr, uint32_t md, uint64_t gl)
 	cairo_set_source_rgb(cr, 0, 0, 0);
 	cairo_move_to(cr, 0, 0);
 	cairo_line_to(cr, 0, DIM_Y); // yaxis
+	cairo_move_to(cr, 0, DIM_Y);
+	cairo_line_to(cr, DIM_X, DIM_Y); // xaxis
 	draw_yticks(cr, md);
-	char buf[sizeof(uint64_t) * 8 + 1];
+	if (n_targets != 1)
+		draw_arrow(cr, 0, DIM_Y, DIM_X, DIM_Y); // xaxis
+	if (n_targets != 1)
+		return;
 	if (gl >= 1e9)
-		sprintf(buf, "%.2fG", gl * 1.0e-9);
+		l = gl * 1.0e-9;
 	else if (gl >= 1e6)
-		sprintf(buf, "%.2fM", gl * 1.0e-6);
+		l = gl * 1.0e-6;
 	else if (gl >= 1e3)
-		sprintf(buf, "%.2fK", gl * 1.0e-3);
+		l = gl * 1.0e-3;
 	else
-		sprintf(buf, "%"PRIu64, gl);
+		l = gl;
 	cairo_set_font_size(cr, 16.0);
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-	cairo_text_extents(cr, buf, &ext);
-	x = DIM_X - ext.width - ext.x_bearing;
-	y = DIM_Y + ext.height / 2 - ext.y_bearing;
-	cairo_move_to(cr, x, y);
-	cairo_show_text(cr, buf);
+	char buf[NAME_MAX];
+	j = nice_interval(l, 10);
+	for (i = 0; i < l; i += j)
+	{
+		x = i / l * DIM_X;
+		cairo_move_to(cr, x, DIM_Y);
+		cairo_line_to(cr, x, DIM_Y - ext.height / 1.5);
+		cairo_stroke(cr);
+		snprintf(buf, NAME_MAX, "%g", i);
+		cairo_text_extents(cr, buf, &ext);
+		cairo_move_to(cr, x - ext.width / 2 - ext.x_bearing, DIM_Y + ext.height / 2 - ext.y_bearing);
+		cairo_show_text(cr, buf);
+		for (k = 1; k <= 4; ++k)
+		{
+			if (i + k * j / 5 < l)
+			{
+				cairo_move_to(cr, x + k * j / 5 / l * DIM_X, DIM_Y);
+				cairo_line_to(cr, x + k * j / 5 / l * DIM_X, DIM_Y - ext.height / 1.5 / 2);
+				cairo_stroke(cr);
+			}
+		}
+	}
 }
 
 void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, dp_t *dp)
