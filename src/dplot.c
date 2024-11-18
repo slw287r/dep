@@ -174,6 +174,7 @@ void draw_yticks(cairo_t *cr, const int ymax)
 		}
 	}
 	cairo_stroke(cr);
+	cairo_select_font_face(cr, "Open Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
 	draw_ylab(cr, "Depth", fmin(-MARGIN / 3.0, -ylm / 2 * 1.25), DIM_Y);
 }
 
