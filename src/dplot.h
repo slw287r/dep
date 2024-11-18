@@ -15,9 +15,9 @@
  * And standard Cell width is is 8.43 which is equal to 64 pixels and that's about 3/4 inch.
  */
 // depth plots
-#define MARGIN 35*3
-#define DIM_X (605*2)
-#define DIM_Y (165*2)
+#define MARGIN (35*3.0)
+#define DIM_X (605*2.0)
+#define DIM_Y (165*2.0)
 #define WIDTH (DIM_X + MARGIN)
 #define HEIGHT (DIM_Y + MARGIN)
 

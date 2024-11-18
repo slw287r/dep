@@ -44,7 +44,7 @@ void draw_rrect(cairo_t *cr)
 	       width         = WIDTH,
 	       height        = HEIGHT,
 	       aspect        = 1.0,     // aspect ratio
-	       corner_radius = height / 50.0;   // and corner curvature radius
+	       corner_radius = height / 60.0;   // and corner curvature radius
 	double radius = corner_radius / aspect;
 	double degrees = M_PI / 180.0;
 	cairo_new_sub_path (cr);
