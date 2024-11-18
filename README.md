@@ -10,15 +10,15 @@ bamdep -i a.bam -o a.png -s 'subtitle'
 
 * Human mitochodria (via `-c`)
 
-<img src="https://github.com/user-attachments/assets/82ce9170-4a59-4e67-9cc6-e1a07926e56b" width=768>
+<img src="https://github.com/user-attachments/assets/ed1d17b2-96af-4968-a7e0-3b3db4207c96" width=768>
 
 * Human genome
 
-<img src="https://github.com/user-attachments/assets/d655b9fb-985f-4834-92bc-b6bb666b67a5" width=768>
+<img src="https://github.com/user-attachments/assets/a2d8955b-23fa-4c1b-b102-1051739e41b4" width=768>
 
 * RSV
 
-<img src="https://github.com/user-attachments/assets/7223c000-3583-4eb7-900d-d059ba5c8f09" width=768>
+<img src="https://github.com/user-attachments/assets/dc61e973-c30d-4265-8e79-a2385ed566e8" width=768>
 
 ## Note
 
