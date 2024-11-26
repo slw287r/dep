@@ -231,7 +231,7 @@ void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 	else if (gl >= 1e3)
 		snprintf(xlab, NAME_MAX, "Genome coordinates (%.2fKbp)", gl * 1.0e-3);
 	else
-		snprintf(xlab, NAME_MAX, "Genome coordinates (%.2fbp)", gl * 1.0e-0);
+		snprintf(xlab, NAME_MAX, "Genome coordinates (%.0fbp)", gl * 1.0e-0);
 	cairo_set_font_size(cr, 18.0);
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
 	cairo_text_extents(cr, xlab, &ext);
@@ -345,9 +345,9 @@ void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, bool s
 		cairo_set_source_rgb(cr, 112 / 255.0, 193 / 255.0, 179 / 255.0);
 	else
 		cairo_set_source_rgb(cr, 36 / 255.0, 123 / 255.0, 160 / 255.0);
-	if (dp->len <= 5) // use hist instead of rectangle to make it visible
+	if (dp->len <= 5 && gl >= 1e4) // use hist instead of rectangle to make it visible
 	{
-		cairo_set_line_width(cr, svg ? lw * 2.5 : lw);
+		cairo_set_line_width(cr, svg ? lw * 2.5 : lw * 1);
 		x = (double)(dp->pos + kh_xval(os, dp->tid) + (double)dp->len / 2) / gl;
 		y = 1 - (log10(dp->dep) + 1) / ymx;
 		cairo_move_to(cr, x, 1);
@@ -366,6 +366,8 @@ void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, bool s
 			cairo_set_line_width(cr, lw * 2.25);
 			cairo_stroke_preserve(cr);
 		}
+		if (gl <= 1e4)
+			cairo_stroke_preserve(cr);
 		cairo_fill(cr);
 	}
 }
