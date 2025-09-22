@@ -100,10 +100,10 @@ int main(int argc, char *argv[])
 	cairo_scale(cr, DIM_X, DIM_Y);
 	// iterate dp array and draw to cr
 	for (i = 0; i < nd; ++i)
-		draw_ped1(cr, os, md, gl, dup_mkd, svg, dp + i);
+		draw_ped1(cr, os, md, gl, arg->bold, dup_mkd, svg, dp + i);
 	if (dup_mkd)
 		for (i = 0; i < nd_wo_dup; ++i)
-			draw_ped1(cr, os, md, gl, false, svg, dp_wo_dup + i);
+			draw_ped1(cr, os, md, gl, arg->bold, false, svg, dp_wo_dup + i);
 	cairo_restore(cr);
 	draw_axis(cr, md, arg->ctg, hdr->n_targets, gl);
 	if (dup_mkd)
@@ -332,12 +332,12 @@ void draw_axis(cairo_t *cr, uint32_t md, const char *ctg, uint32_t n_targets,
 	}
 }
 
-void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, bool svg,
-		dp_t *dp)
+void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool bold, bool dup,
+		bool svg, dp_t *dp)
 {
 	double w1 = 1.0, w2 = 1.0, x, y, w, h;
 	cairo_device_to_user_distance(cr, &w1, &w2);
-	double lw = fmin(w1, w2) / 2;
+	double lw = bold ? fmin(w1, w2) * 2 : fmin(w1, w2) / 2;
 	cairo_set_line_width(cr, lw);
 	cairo_set_line_cap(cr, CAIRO_LINE_CAP_BUTT);
 	double ymx = ceil(log10(md)) + 1;
@@ -347,7 +347,7 @@ void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, bool s
 		cairo_set_source_rgb(cr, 36 / 255.0, 123 / 255.0, 160 / 255.0);
 	if (dp->len <= 5 && gl >= 1e4) // use hist instead of rectangle to make it visible
 	{
-		cairo_set_line_width(cr, svg ? lw * 2.5 : lw * 1);
+		cairo_set_line_width(cr, svg ? lw * 2.5 : lw * (bold + 1));
 		x = (double)(dp->pos + kh_xval(os, dp->tid) + (double)dp->len / 2) / gl;
 		y = 1 - (log10(dp->dep) + 1) / ymx;
 		cairo_move_to(cr, x, 1);
@@ -566,7 +566,7 @@ void prs_arg(int argc, char **argv, arg_t *arg)
 {
 	int c = 0;
 	ketopt_t opt = KETOPT_INIT;
-	const char *opt_str = "i:o:m:l:s:c:d:D:hv";
+	const char *opt_str = "i:o:m:l:s:c:d:D:Bhv";
 	while ((c = ketopt(&opt, argc, argv, 1, opt_str, long_options)) >= 0)
 	{
 		switch (c)
@@ -579,6 +579,7 @@ void prs_arg(int argc, char **argv, arg_t *arg)
 			case 'c': arg->ctg = opt.arg; break;
 			case 'd': arg->dep = opt.arg; break;
 			case 'D': arg->dup = opt.arg; break;
+			case 'B': arg->bold = true; break;
 			case 'h': usage(); break;
 			case 'v':
 				if (strlen(BRANCH_COMMIT))
@@ -701,6 +702,7 @@ void usage()
 	puts("  -c, --ctg \e[3mSTR\e[0m    Restrict analysis to this contig \e[90m[none]\e[0m");
 	puts("  -d, --dep \e[3mSTR\e[0m    Depth (w/o dup) bed4 file \e[90m[none]\e[0m");
 	puts("  -D, --dup \e[3mSTR\e[0m    Depth (w/ dup) bed4 file \e[90m[none]\e[0m");
+	puts("  -B, --bold       Make depth line more vivid");
 	putchar('\n');
 	puts("  -h               Show help message");
 	puts("  -v               Display program version");

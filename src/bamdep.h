@@ -47,6 +47,7 @@ typedef struct
 {
 	char *in, *out, *sub, *ann, *ctg, *dep, *dup;
 	int mpq, len;
+	bool bold;
 } arg_t;
 
 typedef struct
@@ -75,6 +76,7 @@ static ko_longopt_t long_options[] = {
 	{ "ctg",       ko_required_argument, 'c' },
 	{ "dep",       ko_required_argument, 'd' },
 	{ "dup",       ko_required_argument, 'D' },
+	{ "bold",      ko_no_argument, 'B' },
 	{ "help",      ko_no_argument, 'h' },
 	{ "version",   ko_no_argument, 'v' },
 	{ NULL, 0, 0 }
@@ -99,8 +101,8 @@ void prep_an(const dp_t *dp, uint64_t nd, uint64_t gl, char *an);
 void draw_canvas(cairo_surface_t *sf, cairo_t *cr, bam_hdr_t *hdr, int ci,
 		const kh_t *os, const char *tt, const char *st, const char *an, uint32_t md,
 		uint64_t gl);
-void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool dup, bool svg,
-		dp_t *dp);
+void draw_ped1(cairo_t *cr, kh_t *os, uint32_t md, uint64_t gl, bool bold, bool dup,
+		bool svg, dp_t *dp);
 void draw_axis(cairo_t *cr, uint32_t md, const char *ctg, uint32_t n_targets,
 		uint64_t gl);
 int is_gzip(const char *fn);
